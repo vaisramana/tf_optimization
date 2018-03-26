@@ -36,10 +36,11 @@ def main(_):
   mnist = input_data.read_data_sets(FLAGS.data_dir)
 
   # Create the model
-  x = tf.placeholder(tf.float32, [None, 784])
+  x = tf.placeholder(tf.float32, [None, 784], name='image')
   W = tf.Variable(tf.zeros([784, 10]))
   b = tf.Variable(tf.zeros([10]))
-  y = tf.matmul(x, W) + b
+  #y = tf.matmul(x, W) + b
+  y = tf.contrib.layers.fully_connected(x, 10, activation_fn=tf.nn.softmax)
 
   # Define loss and optimizer
   y_ = tf.placeholder(tf.int64, [None])
@@ -64,13 +65,21 @@ def main(_):
     sess.run(train_step, feed_dict={x: batch_xs, y_: batch_ys})
 
   # Test trained model
-  correct_prediction = tf.equal(tf.argmax(y, 1), y_)
+  prediction = tf.argmax(y, axis=1, name="prediction")
+  correct_prediction = tf.equal(prediction, y_)
   accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
   print(sess.run(
       accuracy, feed_dict={
           x: mnist.test.images,
           y_: mnist.test.labels
       }))
+  #tf.Print(W, [W], "W: ")
+  #print(sess.run(W))
+  #print(sess.run(b))
+  #print(sess.run(y))
+  
+  graph = tf.graph_util.convert_variables_to_constants(sess, sess.graph_def, ["prediction"])
+  tf.train.write_graph(graph, '.', './graph_fc.pb', as_text=False)
 
 
 if __name__ == '__main__':
